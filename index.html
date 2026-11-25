@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Star Board invite</title>
+<!-- Star Board invite page v1 -->
+<style>
+  html,body{height:100%;margin:0;background:#0f172a;color:#e2e8f0;font:16px system-ui,sans-serif}
+  body{display:flex;align-items:center;justify-content:center}
+  .box{max-width:380px;padding:32px;border-radius:16px;background:#111827;text-align:center;box-shadow:0 20px 50px #0008}
+  .star{width:56px;height:56px;margin:0 auto 12px;border-radius:14px;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:28px;color:#04210f}
+  h1{margin:0 0 8px;font-size:24px}
+  p{margin:0;color:#94a3b8;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="box"><div class="star">&#9733;</div><h1>Star Board</h1><p id="msg">Connecting you to the board&hellip;</p></div>
+<script>
+(function () {
+  var code = decodeURIComponent(location.hash.slice(1)).trim();
+  var owner = location.hostname.split(".")[0];
+  var repo = location.pathname.split("/").filter(Boolean)[0] || "starboard-invite";
+  var msg = function (t) { document.getElementById("msg").textContent = t; };
+  var safe = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/;
+  if (!/^[A-Za-z0-9]{6,20}$/.test(code)) { msg("This invite link is missing its code. Ask for the link again."); return; }
+  function go(h) {
+    if (h && h.online && safe.test(h.url)) { location.replace(h.url + "/join/" + encodeURIComponent(code)); return true; }
+    return false;
+  }
+  function look() {
+    fetch("https://api.github.com/repos/" + owner + "/" + repo + "/contents/host.json", { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw r.status; return r.json(); })
+      .catch(function () {
+        return fetch("https://raw.githubusercontent.com/" + owner + "/" + repo + "/HEAD/host.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); });
+      })
+      .then(function (h) {
+        if (!go(h)) { msg("The host isn't hosting right now. Keep this page open: it connects automatically when they start."); setTimeout(look, 20000); }
+      })
+      .catch(function () { msg("Can't reach the host yet. Retrying..."); setTimeout(look, 20000); });
+  }
+  look();
+})();
+</script>
+</body>
+</html>
